@@ -12,17 +12,29 @@ class GameSpace:
   DISEASE_CUBES = 24
   STARTING_STATION = "ATLANTA"
 
+  PLAYER_DEFAULTS = {
+    "solve": 5,
+    "treat": 1,
+    "treat_all_on_enter": False,
+    "build_here": False,
+    "fly_from_station": False,
+    "transfer_any": False,
+    "send_others": False,
+    "re_apply_grant": False,
+    "protect_connected_cities": False
+  }
+
   "initialize GameSpace values"
   def __init__(self):
     config = self.init_user_interface()
 
     self.cities = self.cities()
-    self.players = self.init_players(config.players)
-    self.outbreak_counter = self.init_outbreak_counter(config.outbreak_counter);
+    self.diseases = self.init_diseases(config["diseases"])
+    self.players = self.init_players(config["players"])
+    self.outbreak_counter = self.init_outbreak_counter(config["outbreak_counter"]);
     self.player_dex = self.init_player_deck()
     self.infection_dex = self.init_infection_deck()
     self.infected_cities = []
-    self.diseases = self.init_diseases(config.diseases)
 
     self.setup_game()
     self.start_game()
@@ -52,17 +64,52 @@ class GameSpace:
     #       max_outbreaks: 7  // Number indicating the last safe count of outbreaks
     #     }
     #   }
-    pass
+    config = {
+      "diseases": {},
+      "players": ["SCIENCE", "MEDICAL"],
+      "outbreak_counter": {}
+    }
+    return config
 
   "Initialize Players"
-  def init_players(self):
-    pass
+  def init_players(self, config):
+    player_set = config
+    game_players = {}
+
+    with open("classic_players.json") as plyers:
+      player_json = json.load(plyers)
+      players = player_json["players"]
+
+    if type(config) is int:
+      # Create an object with <config> number of players, randomly assigned
+      # assign it to player_set
+      pass
+    
+    for player in player_set:
+      print(player)
+      this_player = {}
+      this_player["id"] = player
+      for ability in self.PLAYER_DEFAULTS:
+        print(ability)
+        if ability in players[player]:
+          this_player[ability] = players[player][ability]
+        else:
+          this_player[ability] = self.PLAYER_DEFAULTS[ability]
+      this_player["diseases"] = {}
+      for disease in self.diseases:
+        this_player["diseases"][disease] = {
+          "treat": this_player["treat"],
+          "solve": this_player["solve"]
+        }
+      game_players[this_player["id"]] = this_player
+
+    return game_players
 
   "Initialize the outbreak counter"
   def init_outbreak_counter(self, config):
     counter = {
-      "outbreaks": config.outbreaks or 0,
-      "maximum": config.max_outbreaks or self.MAX_OUTBREAKS
+      "outbreaks": 0,
+      "maximum": self.MAX_OUTBREAKS
     }
 
     return counter
@@ -73,7 +120,7 @@ class GameSpace:
   def init_infection_deck(self):
     pass
 
-  def init_diseases(self):
+  def init_diseases(self, config):
     diseases = {}
     disease_names = self.generate_disease_names(self.NUMBER_OF_DISEASES)
 
@@ -135,5 +182,7 @@ class GameSpace:
 
 L = GameSpace()
 
-print(L.diseases)
-print(L.cities)
+
+for disease in L.diseases:
+  print(disease)
+print(L.players)
