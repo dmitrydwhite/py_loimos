@@ -1,0 +1,209 @@
+{"cities": [
+  {
+    "name": "ATLANTA",
+    "connections": ["MIAMI", "WASHINGTON", "CHICAGO"],
+    "group": 2
+  }, {
+    "name": "CHICAGO",
+    "connections": ["ATLANTA", "TORONTO", "MEXICO CITY", "LOS ANGELES", "SAN FRANCISCO"],
+    "group": 2
+  }, {
+    "name": "TORONTO",
+    "connections": ["CHICAGO", "WASHINGTON", "NEW YORK"],
+    "group": 2
+  }, {
+    "name": "WASHINGTON",
+    "connections": ["NEW YORK", "TORONTO", "ATLANTA", "MIAMI"],
+    "group": 2
+  }, {
+    "name": "NEW YORK",
+    "connections": ["TORONTO", "WASHINGTON", "LONDON", "MADRID"],
+    "group": 2
+  }, {
+    "name": "SAN FRANCISCO",
+    "connections": ["CHICAGO", "LOS ANGELES", "TOKYO", "MANILA"],
+    "group": 2
+  }, 
+
+  {
+    "name": "MIAMI",
+    "connections": ["WASHINGTON", "ATLANTA", "MEXICO CITY", "BOGOTA"],
+    "group": 0
+  }, {
+    "name": "MEXICO CITY",
+    "connections": ["MIAMI", "CHICAGO", "LOS ANGELES", "LIMA", "BOGOTA"],
+    "group": 0
+  }, {
+    "name": "LOS ANGELES",
+    "connections": ["MEXICO CITY", "CHICAGO", "SAN FRANCISCO", "SYDNEY"],
+    "group": 0
+  }, 
+
+  {
+    "name": "LIMA",
+    "connections": ["BOGOTA", "SANTIAGO"],
+    "group": 0
+  }, {
+    "name": "SANTIAGO",
+    "connections": ["LIMA"],
+    "group": 0
+  }, {
+    "name": "BOGOTA",
+    "connections": ["MIAMI", "MEXICO CITY", "SAO PAULO", "BUENOS AIRES", "LIMA"],
+    "group": 0
+  }, {
+    "name": "SAO PAULO",
+    "connections": ["BOGOTA", "MADRID", "LAGOS", "BUENOS AIRES"],
+    "group": 0
+  }, {
+    "name": "BUENOS AIRES",
+    "connections": ["SAO PAULO", "BOGOTA"],
+    "group": 0
+  }, 
+
+  {
+    "name": "LAGOS",
+    "connections": ["SAO PAULO", "KINSHASA", "KHARTOUM"],
+    "group": 0
+  }, {
+    "name": "KHARTOUM",
+    "connections": ["CAIRO", "LAGOS", "KINSHASA", "JOHANNESBURG"],
+    "group": 0
+  }, {
+    "name": "KINSHASA",
+    "connections": ["LAGOS", "KHARTOUM", "JOHANNESBURG"],
+    "group": 0
+  }, {
+    "name": "JOHANNESBURG",
+    "connections": ["KINSHASA", "KHARTOUM"],
+    "group": 0
+  },
+
+  {
+    "name": "ALGIERS",
+    "connections": ["MADRID", "PARIS", "CAIRO", "ISTANBUL"],
+    "group": 3
+  }, {
+    "name": "CAIRO",
+    "connections": ["ALGIERS", "ISTANBUL", "BAGHDAD", "RIYADH"],
+    "group": 3
+  },
+  {
+    "name": "LONDON",
+    "connections": ["ESSEN", "PARIS", "MADRID", "NEW YORK"],
+    "group": 2
+  }, {
+    "name": "PARIS",
+    "connections": ["LONDON", "MADRID", "ALGIERS", "MILAN", "ESSEN"],
+    "group": 2
+  }, {
+    "name": "MADRID",
+    "connections": ["ALGIERS", "PARIS", "LONDON", "NEW YORK", "SAO PAULO"],
+    "group": 2
+  }, {
+    "name": "ESSEN",
+    "connections": ["LONDON", "PARIS", "MILAN", "ST PETERSBURG"],
+    "group": 2
+  }, {
+    "name": "MILAN",
+    "connections": ["ISTANBUL", "PARIS", "ESSEN"],
+    "group": 2
+  }, {
+    "name": "ST PETERSBURG",
+    "connections": ["MOSCOW", "ISTANBUL", "ESSEN"],
+    "group": 2
+  },
+
+  {
+    "name": "MOSCOW",
+    "connections": ["TEHRAN", "ISTANBUL", "ST PETERSBURG"],
+    "group": 3
+  }, {
+    "name": "ISTANBUL",
+    "connections": ["ALGIERS", "CAIRO", "BAGHDAD", "MOSCOW", "ST PETERSBURG", "MILAN"],
+    "group": 3
+  }, {
+    "name": "BAGHDAD",
+    "connections": ["ISTANBUL", "CAIRO", "RIYADH", "TEHRAN", "KARACHI"],
+    "group": 3
+  }, {
+    "name": "RIYADH",
+    "connections": ["CAIRO", "BAGHDAD", "KARACHI"],
+    "group": 3
+  }, {
+    "name": "TEHRAN",
+    "connections": ["MOSCOW", "BAGHDAD", "KARACHI", "DELHI"],
+    "group": 3
+  }, {
+    "name": "KARACHI",
+    "connections": ["RIYADH", "BAGHDAD", "TEHRAN", "DELHI", "MUMBAI"],
+    "group": 3
+  }, {
+    "name": "MUMBAI",
+    "connections": ["KARACHI", "DELHI", "CHENNAI"],
+    "group": 3
+  }, {
+    "name": "DELHI",
+    "connections": ["TEHRAN", "KARACHI", "MUMBAI", "KOLKATA", "CHENNAI"],
+    "group": 3
+  }, {
+    "name": "KOLKATA",
+    "connections": ["HONG KONG", "BANGKOK", "CHENNAI", "DELHI"],
+    "group": 3
+  }, {
+    "name": "CHENNAI",
+    "connections": ["MUMBAI", "DELHI", "KOLKATA", "BANGKOK", "JAKARTA"],
+    "group": 3
+  },
+
+  {
+    "name": "BEIJING",
+    "connections": ["SEOUL", "SHANGHAI"],
+    "group": 1
+  }, {
+    "name": "SEOUL",
+    "connections": ["BEIJING", "SHANGHAI", "TOKYO"],
+    "group": 1
+  }, {
+    "name": "TOKYO",
+    "connections": ["SEOUL", "SHANGHAI", "SAN FRANCISCO", "OSAKA"],
+    "group": 1
+  }, {
+    "name": "SHANGHAI",
+    "connections": ["BEIJING", "SEOUL", "TOKYO", "TAIPEI", "HONG KONG"],
+    "group": 1
+  }, {
+    "name": "OSAKA",
+    "connections": ["TOKYO", "TAIPEI"],
+    "group": 1
+  }, {
+    "name": "HONG KONG",
+    "connections": ["SHANGHAI", "TAIPEI", "MANILA", "HO CHI MINH CITY", "BANGKOK", "KOLKATA"],
+    "group": 1
+  }, {
+    "name": "TAIPEI",
+    "connections": ["OSAKA", "SHANGHAI", "HONG KONG", "MANILA"],
+    "group": 1
+  }, {
+    "name": "BANGKOK",
+    "connections": ["KOLKATA", "CHENNAI", "JAKARTA", "HO CHI MINH CITY", "HONG KONG"],
+    "group": 1
+  }, {
+    "name": "HO CHI MINH CITY",
+    "connections": ["HONG KONG", "BANGKOK", "JAKARTA", "MANILA"],
+    "group": 1
+  }, {
+    "name": "MANILA",
+    "connections": ["SAN FRANCISCO", "TAIPEI", "HONG KONG", "HO CHI MINH CITY", "SYDNEY"],
+    "group": 1
+  }, {
+    "name": "JAKARTA",
+    "connections": ["CHENNAI", "BANGKOK", "HO CHI MINH CITY", "SYDNEY"],
+    "group": 1
+  }, {
+    "name": "SYDNEY",
+    "connections": ["LOS ANGELES", "MANILA", "JAKARTA"],
+    "group": 1
+  }
+
+]}

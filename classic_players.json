@@ -1,0 +1,26 @@
+{"players": [
+  {
+    "id": "SCIENCE",
+    "solve": 4
+  }, {
+    "id": "MEDICAL",
+    "treat": 3,
+    "treat_all_on_enter": true
+  }, {
+    "id": "OPERATIONS",
+    "build_here": true,
+    "fly_from_station": true
+  }, {
+    "id": "RESEARCH",
+    "transfer_any": true
+  }, {
+    "id": "DISPATCH",
+    "send_others": true
+  }, {
+    "id": "PLANNING",
+    "re_apply_grant": true
+  }, {
+    "id": "QUARANTINE",
+    "protect_connected_cities": true
+  }
+]}
