@@ -2,6 +2,7 @@
 
 import json
 
+import random
 from random import randint
 
 "The central operation of each game instance"
@@ -12,20 +13,10 @@ class GameSpace:
   DISEASE_CUBES = 24
   STARTING_STATION = "ATLANTA"
 
-  PLAYER_DEFAULTS = {
-    "solve": 5,
-    "treat": 1,
-    "treat_all_on_enter": False,
-    "build_here": False,
-    "fly_from_station": False,
-    "transfer_any": False,
-    "send_others": False,
-    "re_apply_grant": False,
-    "protect_connected_cities": False
-  }
-
   "initialize GameSpace values"
   def __init__(self):
+    # self.values = {}
+
     config = self.init_user_interface()
 
     self.cities = self.cities()
@@ -66,7 +57,8 @@ class GameSpace:
     #   }
     config = {
       "diseases": {},
-      "players": ["SCIENCE", "MEDICAL"],
+      # "players": ["SCIENCE", "MEDICAL"],
+      "players": 4,
       "outbreak_counter": {}
     }
     return config
@@ -81,27 +73,10 @@ class GameSpace:
       players = player_json["players"]
 
     if type(config) is int:
-      # Create an object with <config> number of players, randomly assigned
-      # assign it to player_set
-      pass
+      player_set = random.sample(players, config)
     
     for player in player_set:
-      print(player)
-      this_player = {}
-      this_player["id"] = player
-      for ability in self.PLAYER_DEFAULTS:
-        print(ability)
-        if ability in players[player]:
-          this_player[ability] = players[player][ability]
-        else:
-          this_player[ability] = self.PLAYER_DEFAULTS[ability]
-      this_player["diseases"] = {}
-      for disease in self.diseases:
-        this_player["diseases"][disease] = {
-          "treat": this_player["treat"],
-          "solve": this_player["solve"]
-        }
-      game_players[this_player["id"]] = this_player
+      game_players[player] = Player(players[player], len(self.diseases))
 
     return game_players
 
@@ -134,6 +109,7 @@ class GameSpace:
 
     return diseases
 
+  "Initialize all the playable cities for this board"
   def cities(self):
     cits = {}
 
@@ -180,9 +156,54 @@ class GameSpace:
 
     return name_array
 
+"The model for a game's player"
+class Player:
+
+  DEFAULT_ATTRIBUTES = {
+    "solve": 5,
+    "treat": 1,
+    "treat_all_on_enter": False,
+    "build_here": False,
+    "fly_from_station": False,
+    "transfer_any": False,
+    "send_others": False,
+    "re_apply_grant": False,
+    "protect_connected_cities": False
+  }
+
+  disease = {}
+
+  def __init__(self, config, diseases, values=None):
+    if values is None:
+      self.values = {}
+    else:
+      self.values = values
+
+    self.set_attributes(config)
+    self.set_treatment_ability(diseases)
+
+  def set_attributes(self, config):
+    for attribute in self.DEFAULT_ATTRIBUTES.keys():
+      if attribute in config:
+        self[attribute] = config[attribute]
+      else:
+        self[attribute] = self.DEFAULT_ATTRIBUTES[attribute]
+
+  def set_treatment_ability(self, diseases):
+    for idx in range(diseases):
+      self.disease[idx] = {
+        "treat": self['treat'],
+        "solve": self['solve']
+      }
+
+  def __setitem__(self, key, value):
+    self.values[key] = value
+
+  def __getitem__(self, key):
+    return self.values[key]
+
+
 L = GameSpace()
 
-
-for disease in L.diseases:
-  print(disease)
+print(L)
 print(L.players)
