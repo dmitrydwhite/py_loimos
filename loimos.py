@@ -4,6 +4,7 @@ import json
 
 import random
 from random import randint
+from random import shuffle
 
 "The central operation of each game instance"
 class GameSpace:
@@ -20,9 +21,9 @@ class GameSpace:
     config = self.init_user_interface()
 
     self.cities = self.cities()
-    self.diseases = self.init_diseases(config["diseases"])
-    self.players = self.init_players(config["players"])
-    self.outbreak_counter = self.init_outbreak_counter(config["outbreak_counter"]);
+    self.diseases = self.init_diseases(config)
+    self.players = self.init_players(config['players'])
+    self.outbreak_counter = self.init_outbreak_counter(config);
     self.player_dex = self.init_player_deck()
     self.infection_dex = self.init_infection_deck()
     self.infected_cities = []
@@ -56,7 +57,7 @@ class GameSpace:
     #     }
     #   }
     config = {
-      "diseases": {},
+      # "diseases": {},
       # "players": ["SCIENCE", "MEDICAL"],
       "players": 4,
       "outbreak_counter": {}
@@ -74,7 +75,7 @@ class GameSpace:
 
     if type(config) is int:
       player_set = random.sample(players, config)
-    
+
     for player in player_set:
       game_players[player] = Player(players[player], len(self.diseases))
 
@@ -82,10 +83,13 @@ class GameSpace:
 
   "Initialize the outbreak counter"
   def init_outbreak_counter(self, config):
-    counter = {
-      "outbreaks": 0,
-      "maximum": self.MAX_OUTBREAKS
-    }
+    if "outbreak_counter" in config:
+      counter = config["outbreak_counter"]
+    else:
+      counter = {
+        "outbreaks": 0,
+        "maximum": self.MAX_OUTBREAKS
+      }
 
     return counter
 
@@ -93,11 +97,17 @@ class GameSpace:
     pass
 
   def init_infection_deck(self):
-    pass
+    infection_dex = random.sample(self.cities, len(self.cities))
+    return infection_dex
 
   def init_diseases(self, config):
+    if 'diseases' in config:
+      num_diseases = config['diseases']
+    else:
+      num_diseases = self.NUMBER_OF_DISEASES
+
     diseases = {}
-    disease_names = self.generate_disease_names(self.NUMBER_OF_DISEASES)
+    disease_names = self.generate_disease_names(num_diseases)
 
     for idx, dizeez in enumerate(disease_names):
       diseases[idx] = {
@@ -207,3 +217,4 @@ L = GameSpace()
 
 print(L)
 print(L.players)
+print(L.infection_dex)
