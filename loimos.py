@@ -15,13 +15,18 @@ class GameSpace:
   DISEASE_CUBES = 24
   STARTING_STATION = "ATLANTA"
   INFECTION_RATE_INCREMENT = 1
+
+  infection_rate = 2
   game_status = 0
+  one_quiet_night = False
 
   "initialize GameSpace values"
   def __init__(self):
     # self.values = {}
 
-    config = self.init_user_interface()
+    self.inter = Loimos_Interface(self)
+    
+    config = self.inter.get_config()
 
     self.cities = self.cities()
     self.diseases = self.init_diseases(config)
@@ -45,32 +50,16 @@ class GameSpace:
     self.insert_epidemics()
 
   def play_game(self):
-    pass
+    turn_order = random.sample(self.players, len(self.players))
+    print(turn_order)
+    while self.game_status == 0:
+      for player in turn_order:
+        self.inter.take_player_turn(self.players[player])
+        self.draw_player_cards(self.players[player])
+        self.inter.offer_grant()
+        self.advance_game(self.one_quiet_night)
 
   ## Primary GameSpace Initializing Methods ##
-  
-  def init_user_interface(self):
-    # Needs to return an object with the following expectations:
-    #   {
-    #     players: 3        // Number indicating number of players, for random assignment
-    #       "OR"
-    #     players: {        // Object with 0-indexed numbers as keys, and valid *ID*'s as values
-    #       "0": "SCIENCE",
-    #       "1": "MEDICAL",
-    #       "2": "DISPATCH"
-    #     }
-    #     outbreak_counter: {
-    #       outbreaks: 0      // Number indicating the starting number of outbreaks
-    #       max_outbreaks: 7  // Number indicating the last safe count of outbreaks
-    #     }
-    #   }
-    config = {
-      # "diseases": {},
-      # "players": ["SCIENCE", "MEDICAL"],
-      "players": 4,
-      "outbreak_counter": {}
-    }
-    return config
 
   "Initialize Players"
   def init_players(self, config):
@@ -85,7 +74,7 @@ class GameSpace:
       player_set = random.sample(players, config)
 
     for player in player_set:
-      game_players[player] = Player(players[player], len(self.diseases))
+      game_players[player] = Player(players[player], len(self.diseases), player)
 
     return game_players
 
@@ -182,6 +171,7 @@ class GameSpace:
         infections = {}
         infections[disease] = rate
         self.cities[city]['infections'] = infections
+        self.diseases[disease]["cubes_left"] -= rate
       self.infected_cities += this_round
       
   ## Gameplay Player Methods ##
@@ -219,6 +209,9 @@ class GameSpace:
         self.cities[city]["is_quarantined"] = protect
     self.cities[location]["is_quarantined"] = protect
 
+  def draw_player_cards(self, player):
+    pass
+
   ## Gameplay Game Methods ##
   
   def epidemic(self):
@@ -232,26 +225,35 @@ class GameSpace:
   def intensify(self):
     new_location = self.infection_dex.pop()
     self.infect(new_location, 3)
+    self.infected_cities.append(new_location)
+    random.shuffle(self.infected_cities)
+    re_stacked_deck = self.infected_cities + self.infection_dex
+    self.infection_dex = re_stacked_deck
 
-  def infect(self, city_name, cubes, origin_city):
+  def infect(self, city_name, cubes, disease):
     if cubes is None:
       cubes = 1
 
-    if self.cities[city_name]["is_quarantined"]:
+    if "is_quarantined" in self.cities[city_name] and self.cities[city_name]["is_quarantined"] == True:
       return
 
     if not "infectinons" in self.cities[city_name]:
       self.cities[city_name]["infections"] = {}
 
-    if origin_city is not None:
-      infecting_disease = self.cities[origin_city]["group"]
-    else:
+    if disease is None:
+      print("disease is None")
       infecting_disease = self.cities[city_name]["group"]
+    else:
+      infecting_disease = disease
 
     if not infecting_disease in self.cities[city_name]["infections"]:
       self.cities[city_name]["infections"][infecting_disease] = 0
 
     self.cities[city_name]["infections"][infecting_disease] += cubes
+    self.diseases[infecting_disease]["cubes_left"] -= cubes
+
+    if self.diseases[infecting_disease]["cubes_left"] <= 0:
+      self.set_game_status(1)
 
     if self.cities[city_name]["infections"][infecting_disease] > 3:
       self.outbreak_from(city_name, infecting_disease)
@@ -260,10 +262,23 @@ class GameSpace:
     self.outbreak_counter["outbreaks"] += 1
 
     if self.outbreak_counter["outbreaks"] > self.outbreak_counter["maximum"]:
-      self.game_status(1)
+      self.set_game_status(1)
 
     for city_name in self.cities[origin_city]["connections"]:
       self.infect(city_name, 1, disease)
+
+  def advance_game(self, one_quiet_night):
+    if one_quiet_night == True:
+      return
+    else:
+      self.infect_cities()
+
+  def infect_cities(self):
+    for count in range(1, self.infection_rate):
+      next_city = self.infection_dex[0]
+      self.infect(next_city, None, None)
+      self.infected_cities.append(next_city)
+      del self.infection_dex[0]
 
   ## Helper Functions ##
   
@@ -286,6 +301,11 @@ class GameSpace:
 
     return name_array
 
+  ## State Setters ##
+  
+  def set_game_status(self, status_code):
+    self.game_status = status_code
+
 "The model for a game's player"
 class Player:
 
@@ -304,16 +324,18 @@ class Player:
 
   disease = {}
 
-  def __init__(self, config, diseases, values=None):
+  def __init__(self, config, diseases, group_name, values=None):
     if values is None:
       self.values = {}
     else:
       self.values = values
 
-    self.set_attributes(config)
+    self.set_attributes(config, group_name)
     self.set_treatment_ability(diseases)
 
-  def set_attributes(self, config):
+  def set_attributes(self, config, group_name):
+    self["group"] = group_name
+
     for attribute in self.DEFAULT_ATTRIBUTES.keys():
       if attribute in config:
         self[attribute] = config[attribute]
@@ -334,9 +356,159 @@ class Player:
     return self.values[key]
 
 
+class Loimos_Interface:
+
+  def __init__(self, gameObj, values=None):
+    if values is None:
+      self.values = {}
+    else:
+      self.values = values
+
+    self.players = self.init_players()
+
+    self.options = self.init_options()
+
+  def get_config(self):
+    config = {
+      "players": self.players
+    }
+
+    return config
+
+  def init_players(self):
+    player_num = 0
+    player_list = []
+
+    select_at_random = raw_input("Choose players at random? (Y/N) ")
+    if select_at_random.upper() == "Y":
+      player_num = int(raw_input("How many players? "))
+    elif select_at_random.upper() == "N":
+      add_player = True
+      while add_player == True:
+        next_player = raw_input("Select Role: ").upper()
+        if next_player not in ["SCIENCE", "MEDICAL", "OPERATIONS", "RESEARCH", "PLANNING", "DISPATCH", "QUARANTINE"]:
+          print("Not a valid player Role.")
+          continue
+        else:
+          player_num += 1
+          player_list.append(next_player)
+          if player_num >= 2:
+            add_more = raw_input("Add another player?(Y/N) ").upper()
+            if add_more == "N":
+              add_player = False
+
+    print(player_list)
+    if len(player_list) > 0:
+      return player_list
+    else:
+      return player_num
+
+  def init_options(self):
+    pass
+
+  def offer_grant(self):
+    print("Does any team wish to submit a grant?")
+
+  def take_player_turn(self, player):
+    turn_active = 0
+    actions_rem = 4
+
+    while turn_active == 0:
+      self.prompt_action(player)
+      actions_rem -= 1
+      if actions_rem == 0:
+        turn_active = 1
+
+  def prompt_action(self, player):
+    input_status = 0
+    commands = {
+      "collab": self.collaborate,
+      "treat": self.treat,
+      "cure": self.cure,
+      "ride": self.ride_or_ferry,
+      "book": self.book_a_flight,
+      "shuttle": self.shuttle,
+      "station": self.construct_station,
+      "review": self.review,
+      "status": self.status,
+      "apply": self.apply_grant,
+      "xm": self.transmit,
+      "dispatch": self.dispatch_other_player,
+      "reapply": self.re_apply_grant
+    }
+    print(player)
+    while input_status == 0:
+      raw_text = raw_input(player["group"] + "@" + player["location"] + "}>")
+
+      cmd = raw_text.split(' ', 1)
+      if len(cmd) > 1:
+        args = cmd[1]
+      else:
+        args = None
+
+      if cmd[0] in commands:
+        called_method = commands[cmd[0]]
+        called_method(args, player)
+        input_status = 1
+      else:
+        print("Command not recognized by L.O.I.M.O.System")
+
+  def collaborate(self, args, player):
+    print("Collaborating")
+
+  def treat(self, args, player):
+    pass
+
+  def cure(self, args, player):
+    pass
+
+  def ride_or_ferry(self, args, player):
+    pass
+
+  def book_a_flight(self, args, player):
+    pass
+
+  def shuttle(self, args, player):
+    pass
+
+  def construct_station(self, args, player):
+    pass
+
+  def review(self, args, player):
+    pass
+
+  def status(self, args, player):
+    pass
+
+  def apply_grant(self, args, player):
+    pass
+
+  def transmit(self, args, player):
+    pass
+
+  def dispatch_other_player(self, args, player):
+    pass
+
+  def re_apply_grant(self, args, player):
+    pass
+
+  def __setitem__(self, key, value):
+    self.values[key] = value
+
+  def __getitem__(self, key):
+    return self.values[key]
+
+
+
+
+
 L = GameSpace()
 print(L.infected_cities)
 print(L.player_dex)
 
 for player in L.players:
   print(player, L.players[player]["research"])
+
+for disease in L.diseases:
+  print(L.diseases[disease]["name"], L.diseases[disease]["cubes_left"])
+
