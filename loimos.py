@@ -54,6 +54,9 @@ class GameSpace:
     print(turn_order)
     while self.game_status == 0:
       for player in turn_order:
+        for city in self.infected_cities:
+          print(self.cities[city])
+
         self.inter.take_player_turn(self.players[player])
         self.draw_player_cards(self.players[player])
         self.inter.offer_grant()
@@ -195,8 +198,14 @@ class GameSpace:
   def transfer_research(self, player1, player2, research):
     pass
 
-  def treat(self, location, disease):
-    pass
+  def treat(self, location, disease, cubes):
+    starting_cubes = self.cities[location]["infections"][disease]
+
+    if starting_cubes < cubes:
+      cubes = starting_cubes
+
+    self.cities[location]["infections"][disease] -= cubes
+    self.diseases[disease]["cubes_left"] += cubes
 
   def cure(self, disease):
     pass
@@ -320,9 +329,9 @@ class Player:
     "re_apply_grant": False,
     "protect_connected_cities": False,
     "location": "ATLANTA"
+    # "disease": {}
   }
 
-  disease = {}
 
   def __init__(self, config, diseases, group_name, values=None):
     if values is None:
@@ -330,10 +339,13 @@ class Player:
     else:
       self.values = values
 
-    self.set_attributes(config, group_name)
-    self.set_treatment_ability(diseases)
+    print("config", config)
+    self.set_attributes(config, diseases, group_name)
+    # self.set_treatment_ability(diseases)
 
-  def set_attributes(self, config, group_name):
+    # print(self["disease"])
+
+  def set_attributes(self, config, diseases, group_name):
     self["group"] = group_name
 
     for attribute in self.DEFAULT_ATTRIBUTES.keys():
@@ -342,12 +354,18 @@ class Player:
       else:
         self[attribute] = self.DEFAULT_ATTRIBUTES[attribute]
 
-  def set_treatment_ability(self, diseases):
-    for idx in range(diseases):
-      self.disease[idx] = {
-        "treat": self['treat'],
-        "solve": self['solve']
-      }
+    # for idx in range(diseases):
+    #   self["disease"][idx] = {
+    #     "treat": self["treat"],
+    #     "solve": self["solve"]
+    #   }
+
+  # def set_treatment_ability(self, diseases):
+  #   for idx in range(diseases):
+  #     self.disease[idx] = {
+  #       "treat": self['treat'],
+  #       "solve": self['solve']
+  #     }
 
   def __setitem__(self, key, value):
     self.values[key] = value
@@ -367,6 +385,7 @@ class Loimos_Interface:
     self.players = self.init_players()
 
     self.options = self.init_options()
+    self.L = gameObj
 
   def get_config(self):
     config = {
@@ -436,7 +455,7 @@ class Loimos_Interface:
       "dispatch": self.dispatch_other_player,
       "reapply": self.re_apply_grant
     }
-    print(player)
+    print(player["group"])
     while input_status == 0:
       raw_text = raw_input(player["group"] + "@" + player["location"] + "}>")
 
@@ -457,13 +476,92 @@ class Loimos_Interface:
     print("Collaborating")
 
   def treat(self, args, player):
-    pass
+    print(player["group"])
+    if args != None:
+      args = args.lower()
+    
+    treatment_loc = player["location"]
+    
+    if "infections" in self.L.cities[treatment_loc]:
+      treatment_infections = self.L.cities[treatment_loc]["infections"]
+    else:
+      treatment_infections = {}
+    
+    game_diseases = self.L.diseases
+    
+    disease_to_treat = None
+
+    if len(treatment_infections) == 0:
+      disease_to_treat = None
+    else:
+      for disease in treatment_infections:
+        if treatment_infections[disease] != 0:
+          disease_to_treat = disease
+          break
+
+    if disease_to_treat == None:
+      print("no diseases suitable for treatment at this location")
+      return
+
+    if len(treatment_infections) > 1:
+      multi_diseases = True
+    else:
+      multi_diseases = False
+
+    if args != None:
+      # Let's check the args submitted to see if they match any of the diseases in this city
+      args_match = False
+      for disease in treatment_infections:
+        # First check if they submitted a number
+        if args == disease:
+          args_match = True
+          disease_to_treat = disease
+          break
+        
+        # Then check if they typed the color exactly
+        if args == game_diseases[disease]["color"]:
+          args_match == True
+          break
+
+        # Then check if the first three letters of their string match the first three letters of the color
+        if args[0:3] == game_diseases[disease]["color"][0:3]:
+          args_match = True
+          disease_to_treat = disease
+          break
+
+        # Then check if maybe they tried to type the name of the disease
+        if args[0:7].lower() == game_diseases[disease]["name"][0:7].lower():
+          args_match = True
+          disease_to_treat = disease
+          break
+
+        print("treatment plan instructions not understood")
+
+
+    if multi_diseases == True and args == None:
+      print("specify disease for treatment plan review")
+      return
+
+    if game_diseases[disease_to_treat]["cured"] == True:
+      treatment_level = 3
+    else:
+      treatment_level = player["treat"]
+
+    if multi_diseases == True and args_match:
+      self.L.treat(treatment_loc, disease_to_treat, treatment_level)
+
+    if not multi_diseases:
+      for key in treatment_infections:
+        self.L.treat(treatment_loc, key, treatment_level)
 
   def cure(self, args, player):
     pass
 
   def ride_or_ferry(self, args, player):
-    pass
+    args = args.upper()
+
+    self.L.move_p(player, args)
+
 
   def book_a_flight(self, args, player):
     pass
