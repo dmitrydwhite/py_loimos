@@ -85,7 +85,7 @@
     "group": 3
   }, {
     "name": "CAIRO",
-    "connections": ["ALGIERS", "ISTANBUL", "BAGHDAD", "RIYADH"],
+    "connections": ["ALGIERS", "ISTANBUL", "BAGHDAD", "RIYADH", "KHARTOUM"],
     "group": 3
   },
   {
