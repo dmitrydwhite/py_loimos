@@ -387,7 +387,7 @@ class Player:
     "re_apply_grant": False,
     "protect_connected_cities": False,
     "location": "ATLANTA"
-    # "disease": {}
+    # "treatment_abilities": {}
   }
 
 
@@ -397,11 +397,9 @@ class Player:
     else:
       self.values = values
 
-    print("config", config)
+    # print("config", config)
     self.set_attributes(config, diseases, group_name)
-    # self.set_treatment_ability(diseases)
-
-    # print(self["disease"])
+    self.set_treatment_ability(diseases)
 
   def set_attributes(self, config, diseases, group_name):
     self["group"] = group_name
@@ -412,14 +410,22 @@ class Player:
       else:
         self[attribute] = self.DEFAULT_ATTRIBUTES[attribute]
 
+  def set_treatment_ability(self, diseases):
+    # TODO: Set a separate treat / solve value for each individual disease
+    # Had problems iterating through the properties
+    pass
+
   def __setitem__(self, key, value):
     self.values[key] = value
 
   def __getitem__(self, key):
     return self.values[key]
 
-
+"""
+This is the Controller
+"""
 class Loimos_Interface:
+# TODO: Separate Controller functionality from View functionality better
 
   def __init__(self, gameObj, values=None):
     if values is None:
