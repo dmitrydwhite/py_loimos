@@ -1,3 +1,5 @@
+from Loimos_cl_View import Command_Line_View as cl_view
+
 """
 This is the Controller
 """
