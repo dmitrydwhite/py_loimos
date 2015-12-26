@@ -12,6 +12,7 @@ class Loimos_Controller:
     else:
       self.values = values
 
+    self.view = cl_view()
     self.players = self.init_players()
 
     self.options = self.init_options()
@@ -25,6 +26,8 @@ class Loimos_Controller:
     return config
 
   def init_players(self):
+    return self.view.select_players()
+
     player_num = 0
     player_list = []
 

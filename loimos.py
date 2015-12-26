@@ -160,7 +160,8 @@ class GameSpace:
         "name": dizeez,
         "cubes_left": self.DISEASE_CUBES,
         "color": self.DISEASE_COLORS[idx],
-        "cured": False
+        "cured": False,
+        "eradicated": False
       }
 
     return diseases
