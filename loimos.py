@@ -11,6 +11,7 @@ from random import shuffle
 # Import Loimos Classes
 from Loimos_Player import Player as Player
 from Loimos_Controller import Loimos_Controller as Controller
+from Loimos_Events import Card_Events as Grants
 
 "The central operation of each game instance"
 class GameSpace:
@@ -32,12 +33,14 @@ class GameSpace:
     # self.values = {}
 
     self.inter = Controller(self)
+    self.grants = Grants(self.inter.view)
     
     config = self.inter.get_config()
 
     self.cities = self.cities()
     self.diseases = self.init_diseases(config)
     self.players = self.init_players(config['players'])
+    self.events = self.grants._provide_events()
     self.outbreak_counter = self.init_outbreak_counter(config);
     self.player_dex = self.init_player_deck()
     self.infection_dex = self.init_infection_deck()
@@ -106,11 +109,7 @@ class GameSpace:
     stack = len(self.cities)
     player_deck = random.sample(list(self.cities), stack)
 
-    with open("classic_events.json") as events:
-      grants_json = json.load(events)
-      grants = grants_json["events"]
-
-    player_deck += grants
+    player_deck += self.events
 
     random.shuffle(player_deck)
 
@@ -342,6 +341,7 @@ class GameSpace:
 
   def advance_game(self, one_quiet_night):
     if one_quiet_night == True:
+      self.one_quiet_night = False
       return
     else:
       self.infect_cities()

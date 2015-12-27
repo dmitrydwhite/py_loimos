@@ -1,4 +1,4 @@
-from Loimos_cl_View import Command_Line_View as cl_view
+from Loimos_CmdLine_View import Command_Line_View as cl_view
 
 """
 This is the Controller
@@ -12,11 +12,11 @@ class Loimos_Controller:
     else:
       self.values = values
 
-    self.view = cl_view()
+    self.L = gameObj
+    self.view = cl_view(self)
     self.players = self.init_players()
 
     self.options = self.init_options()
-    self.L = gameObj
 
   def get_config(self):
     config = {
@@ -28,52 +28,20 @@ class Loimos_Controller:
   def init_players(self):
     return self.view.select_players()
 
-    player_num = 0
-    player_list = []
-
-    select_at_random = input("Choose players at random? (Y/N) ")
-    if select_at_random.upper() == "Y":
-      player_num = int(input("How many players? "))
-    elif select_at_random.upper() == "N":
-      add_player = True
-      while add_player == True:
-        next_player = input("Select Role: ").upper()
-        if next_player not in ["SCIENCE", "MEDICAL", "OPERATIONS", "RESEARCH", "PLANNING", "DISPATCH", "QUARANTINE"]:
-          print("Not a valid player Role.")
-          continue
-        else:
-          player_num += 1
-          player_list.append(next_player)
-          if player_num >= 2:
-            add_more = input("Add another player?(Y/N) ").upper()
-            if add_more == "N":
-              add_player = False
-
-    print(player_list)
-    if len(player_list) > 0:
-      return player_list
-    else:
-      return player_num
-
   def init_options(self):
     pass
 
   def offer_grant(self):
-    print("Does any team wish to submit a grant?")
+    return self.view.offer_grant()
 
   def require_discard(self, player):
     research = player["research"]
 
     if len(research) > 7:
-      print()
-      print("MSG::CDC==>@%s.TEAM[You must abandon some of your research or forego a grant to continue]:" % player["group"])
-      self.review(self, player)
-      abandon = int(input("Select a number to abandon: ")) - 1
-
-      if abandon in range(len(research)):
-        print("abandoning %s" % research[abandon])
-        print()
-        self.L.discard(player, research[abandon])
+      discard = self.view.select_discard(player)
+      
+      if discard in research:
+        self.L.discard(player, discard)
       else:
         self.require_discard(player)
     else:
@@ -85,45 +53,9 @@ class Loimos_Controller:
     actions_rem = 4
 
     while turn_active == 0:
-      actions_rem -= self.prompt_action(player)
+      actions_rem -= self.view.prompt_action(player)
       if actions_rem <= 0:
         turn_active = 1
-
-  def prompt_action(self, player):
-    input_status = 0
-    commands = {
-      "collab": self.collaborate,
-      "treat": self.treat,  # In a good state as of 12/9
-      "cure": self.cure,
-      "ride": self.ride_or_ferry,
-      "book": self.book_a_flight,
-      "shuttle": self.shuttle,
-      "station": self.construct_station,
-      "review": self.review,
-      "status": self.status,
-      "cx": self.show_connections,
-      "apply": self.apply_grant,
-      "xm": self.transmit,
-      "dispatch": self.dispatch_other_player,
-      "reapply": self.re_apply_grant,
-      "skip": self.skip_turn
-    }
-    while input_status == 0:
-      raw_text = input(player["group"] + "@" + player["location"] + "}>")
-
-      cmd = raw_text.split(' ', 1)
-      if len(cmd) > 1:
-        args = cmd[1]
-      else:
-        args = None
-
-      if cmd[0] in commands:
-        called_method = commands[cmd[0]]
-        input_status = called_method(args, player)
-      else:
-        print("Command not recognized by L.O.I.M.O.System")
-
-      return input_status
 
   def trade_research(self, l_player, r_player, direction, location):
     if direction == True:
@@ -133,7 +65,7 @@ class Loimos_Controller:
       giving_player = r_player
       receiving_player = l_player
 
-    print("Transferring research gathered in %s from %s TEAM to %s TEAM" % ())
+    self.view.show_research_transfer(giving_player, receiving_player, location)
     giving_player["research"].remove(location)
     receiving_player["research"].append(location)
     if len(receiving_player["research"]) > 7:
@@ -154,9 +86,8 @@ class Loimos_Controller:
       if game_players[playa]["location"] == here and game_players[playa]["group"] != player["group"]:
         other_players_here.append(game_players[playa])
 
-    print(other_players_here)
     if len(other_players_here) == 0:
-      print("no other teams in %s to collaborate with" % here)
+      self.view.no_players_to_collaborate_with(here)
       return 0
     elif len(other_players_here) == 1:
       player_to_trade = other_players_here[0]
@@ -172,15 +103,9 @@ class Loimos_Controller:
           research_player = player_to_trade
           player_giving = False
 
-        print("Select Research from the %s TEAM to transfer:" % research_player["group"])
-        self.review(self, research_player)
-        correct_input = 0
-        while correct_input == 0:
-          research_selection = int(input("Select a number}>")) - 1
-          if research_selection in range(len(research_player["research"])):
-            self.trade_research(self, player, player_to_trade, player_giving, here)
-            correct_input = 1
-        return 1
+        research_selection = self.view.choose_research_to_give(player, research_player["group"])
+        if research_selection in research_player["research"]:
+          self.trade_research(self, player, player_to_trade, player_giving, research_selection)
 
       else:
         if here in player["research"]:
@@ -194,17 +119,11 @@ class Loimos_Controller:
           self.trade_research(player, player_to_trade, player_giving, here)
           return 1
         else:
-          print("No baseline Research data in %s for collaboration" % here)
-          return 0
+          self.view.no_cards_to_trade(here)
 
     else:
-      print("You must specify a team in this location to collaborate with")
-      for team in other_players_here:
-        print(team["group"])
-      return 0
+      self.view.offer_eligible_players_to_collaborate(other_players_here)
       
-
-
 
   """
   This Method handles the player treating a disease in the city they are in
@@ -449,94 +368,15 @@ class Loimos_Controller:
       can_build_here = False
 
     if can_build_here:
-      self.show_construction_start(True, player["location"])
+      self.view.show_construction_start(True, player["location"])
       self.L.build_station(player["location"])
       if not is_operations:
         self.L.discard(player, player["location"])
       return 1
     else:
-      self.show_construction_start(False, player["location"])
+      self.view.show_construction_start(False, player["location"])
       return 0
 
-  def show_construction_start(self, boolean, location):
-    if boolean == True:
-      print("Construction contract submitted for RESEARCH STATION in %s.  Construction underway." % location)
-    else:
-      print("Resources are unavailable to build a RESEARCH STATION here.")
-
-  def review(self, args, player):
-    for idx, card in enumerate(player["research"]):
-      counter = idx + 1
-      if card in self.L.cities:
-        print("%d. RESEARCH from %s on %s" % (counter, card, self.L.diseases[self.L.cities[card]["group"]]["name"]))
-      else:
-        print("%d. GRANT for %s" % (counter, card))
-
-    return 0
-
-
-  def status(self, args, player):
-    print()
-    print("===~ DISEASE STATUS ~===")
-    for disease in self.L.diseases:
-      affected_cities = []
-      current_disease = self.L.diseases[disease]
-      current_disease_info = (current_disease["name"], current_disease["color"], current_disease["cured"])
-
-      for city in self.L.cities:
-        if "infections" in self.L.cities[city] and disease in self.L.cities[city]["infections"] and self.L.cities[city]["infections"][disease] > 0:
-          affected_cities.append(self.L.cities[city])
-
-      affected_cities_string = ""
-      for city in affected_cities:
-        city_string = city["name"] + '(' + str(city["infections"][disease]) + ' in 1000): '
-        affected_cities_string += city_string
-      print("( )%s, color: %s, cured: %s" % current_disease_info)
-      print("Cities Affected: " + affected_cities_string)
-
-    print()
-    print("===~ TEAM STATUS ~===")
-    for player in self.L.players:
-      this_location = self.L.players[player]["location"]
-      this_city = self.L.cities[this_location]
-      game_diseases = self.L.diseases
-
-      print(player + " TEAM:")
-      print("Currently located in " + this_location)
-      if "infections" in this_city:
-        infected_string = ""
-        for key in this_city["infections"]:
-          if this_city["infections"][key] > 0:
-            infected_string += "(" + game_diseases[key]["name"] + ":" + game_diseases[key]["color"] + ":" + str(this_city["infections"][key]) +")"
-
-      print("Connections: %s" % ','.join(this_city["connections"]))
-      print()
-    
-    print("===~ RESEARCH STATIONS ~===")
-    for station in self.L.cities_with_stations:
-      print("[+] %s +-> %s" % (station, ', '.join(self.L.cities[station]["connections"])) )
-
-    print()
-    return 0
-
-  def show_connections(self, args, player):
-    if args == None:
-      show_location = player["location"]
-    elif args.upper() in self.L.cities:
-      show_location = args.upper()
-    else:
-      show_location = None
-
-    if show_location == None:
-      print("input not understood")
-      return 0
-
-    spacer = "".join([" "] * len(show_location))
-    print("nearby locatinos for %s" % show_location)
-    print(show_location + " +")
-    for cnx in self.L.cities[show_location]["connections"]:
-      print("%s +-> %s +-> %s" % (spacer, cnx, ", ".join(self.L.cities[cnx]["connections"])))
-    return 0
 
   def apply_grant(self, args, player):
     pass
@@ -550,8 +390,6 @@ class Loimos_Controller:
   def re_apply_grant(self, args, player):
     pass
 
-  def skip_turn(self, args, player):
-    return 4
 
   def __setitem__(self, key, value):
     self.values[key] = value
