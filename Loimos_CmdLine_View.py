@@ -32,6 +32,9 @@ class Command_Line_View:
     Displays info to user;
     Accepts List of Strings ["PLAYER", "TEAMS"];
     Displays those player teams to user;
+  show_treatment_success:
+    Displays info to user;
+    Accepts ...
 
   =~Loimos_Events Required Methods~=
   request_airlift_info: 
@@ -84,7 +87,7 @@ class Command_Line_View:
     input_status = 0
     commands = {
       "collab": self.ctrl.collaborate, # Fully Extracted, 12/26/15
-      "treat": self.ctrl.treat,
+      "treat": self.view_treat, # Controller method complete, Need to get View method finished, 12/26/15
       "cure": self.ctrl.cure,
       "ride": self.ctrl.ride_or_ferry,
       "book": self.ctrl.book_a_flight,
@@ -133,6 +136,68 @@ class Command_Line_View:
     else:
       return None
 
+  def view_treat(self, args, player):
+    if args != None:
+      args = args.lower()
+    
+    treatment_loc = player["location"]
+    
+    if "infections" in self.L.cities[treatment_loc] and str(args) in self.L.cities[treatment_loc]["infections"]:
+      treatment_infections = self.L.cities[treatment_loc]["infections"]
+    else:
+      treatment_infections = {}
+    
+    game_diseases = self.L.diseases
+    
+    disease_to_treat = None
+
+    if len(treatment_infections) == 0:
+      disease_to_treat = None
+    else:
+      for disease in treatment_infections:
+        if treatment_infections[disease] != 0:
+          disease_to_treat = disease
+          break
+
+    if disease_to_treat == None:
+      self.view.show_no_diseases_here()
+      return 0
+
+    if len(treatment_infections) > 1:
+      multi_diseases = True
+    else:
+      multi_diseases = False
+
+    if args != None:
+      # Let's check the args submitted to see if they match any of the diseases in this city
+      args_match = False
+      for disease in treatment_infections:
+        # First check if they submitted a number
+        if args == str(disease):
+          args_match = True
+          disease_to_treat = disease
+          break
+        
+        # Then check if they typed the color exactly
+        if args == game_diseases[disease]["color"]:
+          args_match == True
+          break
+
+        # Then check if the first three letters of their string match the first three letters of the color
+        if args[0:3] == game_diseases[disease]["color"][0:3]:
+          args_match = True
+          disease_to_treat = disease
+          break
+
+        # Then check if maybe they tried to type the name of the disease
+        if args[0:7].lower() == game_diseases[disease]["name"][0:7].lower():
+          args_match = True
+          disease_to_treat = disease
+          break
+
+        print("treatment plan instructions not understood or invalid")
+        return 0    
+
   def choose_research_to_give(self, this_turn_player, research_player):
     print("Select Research from the %s TEAM to transfer:" % research_player["group"])
     self.review(self, research_player)
@@ -143,6 +208,18 @@ class Command_Line_View:
         correct_input = 1
     return research_player["research"][research_selection]
    
+
+  def show_treatment_success(self, boolean, disease, location, new_level):
+    if boolean == True:
+      disease_name = disease["name"]
+      level_string = str(new_level)
+      if new_level > 0:
+        level_string += ' in 1000.'
+
+      print("submitting treatment plan for %s ..." % disease_name)
+      print("RESULTS: %s incidences in %s reduced to %s" % (disease_name, location, level_string))
+    else:
+      print("treatment of %s in %s was invalid" % (disease_name, location))
 
   def show_construction_start(self, boolean, location):
     if boolean == True:
@@ -162,6 +239,9 @@ class Command_Line_View:
 
   def show_research_transfer(self, giving_player, receiving_player, location):
     print("Transferring research gathered in %s from %s TEAM to %s TEAM" % (location, giving_player, receiving_player))
+
+  def show_no_diseases_here(self):
+    print("no diseases suitable for treatment at this location")
 
   ### Optional Methods ###
   def skip_turn(self, args, player):

@@ -129,96 +129,22 @@ class Loimos_Controller:
   This Method handles the player treating a disease in the city they are in
   """
   def treat(self, args, player):
-    if args != None:
-      args = args.lower()
-    
     treatment_loc = player["location"]
     
-    if "infections" in self.L.cities[treatment_loc]:
+    if "infections" in self.L.cities[treatment_loc] and str(args) in self.L.cities[treatment_loc]["infections"]:
+      game_diseases = self.L.diseases
       treatment_infections = self.L.cities[treatment_loc]["infections"]
+      
+      if game_diseases[args]["cured"] == True:
+        treatment_level = 3
+      else:
+        treatment_level = player["treat"]
+
+      self.L.treat(treatment_loc, args, treatment_level)
+      self.view.show_treatment_success(True, game_diseases[args], treatment_loc, treatment_infections[args])
     else:
-      treatment_infections = {}
-    
-    game_diseases = self.L.diseases
-    
-    disease_to_treat = None
+      self.view.show_treatment_success(False, game_diseases[args], treatment_loc, treatment_infections[args])
 
-    if len(treatment_infections) == 0:
-      disease_to_treat = None
-    else:
-      for disease in treatment_infections:
-        if treatment_infections[disease] != 0:
-          disease_to_treat = disease
-          break
-
-    if disease_to_treat == None:
-      print("no diseases suitable for treatment at this location")
-      return 0
-
-    if len(treatment_infections) > 1:
-      multi_diseases = True
-    else:
-      multi_diseases = False
-
-    if args != None:
-      # Let's check the args submitted to see if they match any of the diseases in this city
-      args_match = False
-      for disease in treatment_infections:
-        # First check if they submitted a number
-        if args == str(disease):
-          args_match = True
-          disease_to_treat = disease
-          break
-        
-        # Then check if they typed the color exactly
-        if args == game_diseases[disease]["color"]:
-          args_match == True
-          break
-
-        # Then check if the first three letters of their string match the first three letters of the color
-        if args[0:3] == game_diseases[disease]["color"][0:3]:
-          args_match = True
-          disease_to_treat = disease
-          break
-
-        # Then check if maybe they tried to type the name of the disease
-        if args[0:7].lower() == game_diseases[disease]["name"][0:7].lower():
-          args_match = True
-          disease_to_treat = disease
-          break
-
-        print("treatment plan instructions not understood or invalid")
-        return 0
-
-
-    if multi_diseases == True and args == None:
-      print("specify disease for treatment plan review")
-      return 0
-
-    if game_diseases[disease_to_treat]["cured"] == True:
-      treatment_level = 3
-    else:
-      treatment_level = player["treat"]
-
-    if multi_diseases == True and args_match:
-      self.L.treat(treatment_loc, disease_to_treat, treatment_level)
-      self.show_treatment_success(game_diseases[disease_to_treat]["name"], treatment_loc, treatment_infections[disease_to_treat])
-      return 1
-
-    if not multi_diseases:
-      for key in treatment_infections:
-        self.L.treat(treatment_loc, key, treatment_level)
-        self.show_treatment_success(game_diseases[key]["name"], treatment_loc, treatment_infections[key])
-        return 1
-
-  # Little helper function to show the results of treatment
-  def show_treatment_success(self, disease_name, location, new_level):
-    level_string = str(new_level)
-    if new_level > 0:
-      level_string += ' in 1000.'
-
-    print("submitting treatment plan for %s ..." % disease_name)
-    print("RESULTS: %s incidences in %s reduced to %s" % (disease_name, location, level_string))
 
   def cure(self, args, player):
     game_cities = self.L.cities
