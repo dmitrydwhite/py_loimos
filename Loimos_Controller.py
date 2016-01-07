@@ -152,8 +152,7 @@ class Loimos_Controller:
     like_cards = [0] * len(self.L.diseases)
 
     if "has_station" not in game_cities[cure_location] and game_cities[cure_location]["has_station"] != True:
-      print("No Research Station here to implement your findings")
-      return 0
+      self.view.reject_cure_no_station()
 
     for card in player["research"]:
       if card in game_cities:
@@ -167,12 +166,9 @@ class Loimos_Controller:
 
     if has_cure == True:
       self.L.cure(idx)
-      print ("CONGRATULATIONS! Your collation of research has led to the cure for %s." % self.L.diseases[idx])
-      return 1
+      self.view.accept_cure(self.L.diseases[idx])
     else:
-      print("You do not have enough research to cure any disease")
-      return 0
-
+      self.view.reject_cure_no_cards()
 
   """
   This Method handles a player moving to an adjacent city
@@ -187,59 +183,17 @@ class Loimos_Controller:
       self.L.move_p(player, args)
       return 1
     else:
-      print("destination is not on a ferry or shuttle route from here")
-      return 0
+      self.view.invalid_ride()
       
-
-
   """
   This Method handles a player flying using one of their Research cards
   """
-  def book_a_flight(self, args, player):
-    if args == None:
-      print("destination information required to book flight")
-      return 0
-
-    args = args.upper()
-    locs = (player["location"], args)
-    discard = locs[1]
-    has_destination = args in player["research"]
-    has_origin = player["location"] in player["research"]
-    can_fly = has_origin or has_destination
-
-    if not can_fly:
-      print("no booking documents available for flight from %s to %s" % locs)
-      return 0
-
-    if has_destination:
-      discard = locs[1]
-
-    if has_origin:
-      discard = locs[0]
-
-    if has_origin and has_destination:
-      correct_selection = 1
-      print("You have booking documents for both %s and %s.  Which document would you like to use?" % locs)
-      print("1. %s" % locs[0])
-      print("2. %s" % locs[1])
-      print("3. cancel")
-      while correct_selection == 1:
-        selection = input("Select 1 or 2}>")
-        print(selection)
-        if selection == "3":
-          return 0
-        if selection == "1" or selection == "2":
-          print("We have a valid selection")
-          correct_selection = 0
-
-      discard = locs[int(selection) - 1]
-
-    self.L.discard(player, discard)
-    self.L.move_p(player, locs[1])
-    print("COMMERCIAL FLIGHT booked to %s" % locs[1])
-    print("Logging out at %s" % locs[0])
-    print("...Logging in at %s" % locs[1])
-    return 1
+  def book_a_flight(self, dest, player, discard):
+    if dest == None:
+      self.view.invalid_action()
+    else:
+      self.L.discard(player, discard)
+      self.L.move_p(player, dest)
 
   def shuttle(self, args, player):
     origin = self.L.cities[player["location"]]

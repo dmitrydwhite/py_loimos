@@ -34,7 +34,24 @@ class Command_Line_View:
     Displays those player teams to user;
   show_treatment_success:
     Displays info to user;
-    Accepts ...
+    Accepts boolean, disease, location, new disease level;
+    Displays success or failure (based on boolean) of user's treatment action;
+  accept_cure:
+    Displays info to user;
+    Displays success of cure;
+  reject_cure_no_station:
+    Displays info to user;
+    Displays cure not valid due to user not at Research Station;
+  reject_cure_no_cards:
+    Displays info to user;
+    Displays cure not valid due to user doesn't have enough cards to cure;
+  invalid_ride:
+    Displays info to user;
+    Displays that user's move to adjacent city is invalid;
+  invalid_action:
+    Displays info to user;
+    Displays generic message that user action is not valid;
+
 
   =~Loimos_Events Required Methods~=
   request_airlift_info: 
@@ -87,10 +104,10 @@ class Command_Line_View:
     input_status = 0
     commands = {
       "collab": self.ctrl.collaborate, # Fully Extracted, 12/26/15
-      "treat": self.view_treat, # Controller method complete, Need to get View method finished, 12/26/15
-      "cure": self.ctrl.cure,
-      "ride": self.ctrl.ride_or_ferry,
-      "book": self.ctrl.book_a_flight,
+      "treat": self.view_treat, # Fully Extracted, 1/7/16
+      "cure": self.ctrl.cure, # Fully Extracted, 1/7/16
+      "ride": self.ctrl.ride_or_ferry, # Fully Extracted, 1/7/16
+      "book": self.view.view_book_a_flight, # Fully Extracted, 1/7/16
       "shuttle": self.ctrl.shuttle,
       "station": self.ctrl.construct_station, #Fully Extracted, 12/26/15
       "review": self.review, # Optional Method, Complete, 12/26/15
@@ -198,6 +215,56 @@ class Command_Line_View:
         print("treatment plan instructions not understood or invalid")
         return 0    
 
+  def view_book_a_flight(self, args, player):
+    if args == None:
+      print("destination information required to book flight")
+      return 0
+
+    args = args.upper()
+    locs = (player["location"], args)
+    discard = locs[1]
+
+    if locs == discard:
+      print("Cannot fly to your current location")
+      return 0
+
+    has_destination = args in player["research"]
+    has_origin = player["location"] in player["research"]
+    can_fly = has_origin or has_destination
+
+    if not can_fly:
+      print("no booking documents available for flight from %s to %s" % locs)
+      return 0
+
+    if has_destination:
+      discard = locs[1]
+
+    if has_origin:
+      discard = locs[0]
+
+    if has_origin and has_destination:
+      correct_selection = 1
+      print("You have booking documents for both %s and %s.  Which document would you like to use?" % locs)
+      print("1. %s" % locs[0])
+      print("2. %s" % locs[1])
+      print("3. cancel")
+      while correct_selection == 1:
+        selection = input("Select 1 or 2}>")
+        print(selection)
+        if selection == "3":
+          return 0
+        if selection == "1" or selection == "2":
+          correct_selection = 0
+
+      discard = locs[int(selection) - 1]
+      print("%s selected as booking document for flight", discard)
+
+    self.ctrl.book_a_flight(player, locs[1], discard)
+    print("COMMERCIAL FLIGHT booked to %s" % locs[1])
+    print("Logging out at %s" % locs[0])
+    print("...Logging in at %s" % locs[1])
+    return 1
+
   def choose_research_to_give(self, this_turn_player, research_player):
     print("Select Research from the %s TEAM to transfer:" % research_player["group"])
     self.review(self, research_player)
@@ -220,6 +287,22 @@ class Command_Line_View:
       print("RESULTS: %s incidences in %s reduced to %s" % (disease_name, location, level_string))
     else:
       print("treatment of %s in %s was invalid" % (disease_name, location))
+
+  def accept_cure(self, disease):
+    print ("CONGRATULATIONS! Your collation of research has led to the cure for %s." % disease["name"])
+    return 1
+
+  def reject_cure_no_station(self):
+    print("No Research Station here to implement your findings")
+    return 0
+
+  def reject_cure_no_cards(self):
+    print("You do not have enough research to cure any disease")
+    return 0
+
+  def invalid_ride(self):
+    print("destination is not on a ferry or shuttle route from here")
+    return 0
 
   def show_construction_start(self, boolean, location):
     if boolean == True:
