@@ -130,9 +130,9 @@ class Loimos_Controller:
   """
   def treat(self, args, player):
     treatment_loc = player["location"]
+    game_diseases = self.L.diseases
     
-    if "infections" in self.L.cities[treatment_loc] and str(args) in self.L.cities[treatment_loc]["infections"]:
-      game_diseases = self.L.diseases
+    if "infections" in self.L.cities[treatment_loc] and args in self.L.cities[treatment_loc]["infections"]:
       treatment_infections = self.L.cities[treatment_loc]["infections"]
       
       if game_diseases[args]["cured"] == True:
@@ -143,7 +143,7 @@ class Loimos_Controller:
       self.L.treat(treatment_loc, args, treatment_level)
       self.view.show_treatment_success(True, game_diseases[args], treatment_loc, treatment_infections[args])
     else:
-      self.view.show_treatment_success(False, game_diseases[args], treatment_loc, treatment_infections[args])
+      self.view.show_treatment_success(False, game_diseases[args], treatment_loc, 0)
 
 
   def cure(self, args, player):
@@ -166,9 +166,9 @@ class Loimos_Controller:
 
     if has_cure == True:
       self.L.cure(idx)
-      self.view.accept_cure(self.L.diseases[idx])
+      return self.view.accept_cure(self.L.diseases[idx])
     else:
-      self.view.reject_cure_no_cards()
+      return self.view.reject_cure_no_cards()
 
   """
   This Method handles a player moving to an adjacent city
@@ -184,6 +184,7 @@ class Loimos_Controller:
       return 1
     else:
       self.view.invalid_ride()
+      return 0
       
   """
   This Method handles a player flying using one of their Research cards
@@ -191,47 +192,23 @@ class Loimos_Controller:
   def book_a_flight(self, dest, player, discard):
     if dest == None:
       self.view.invalid_action()
+      return 0
     else:
       self.L.discard(player, discard)
       self.L.move_p(player, dest)
+      return 1
 
   def shuttle(self, args, player):
+    print(args) # debugger
     origin = self.L.cities[player["location"]]
-    origin_loc = origin["name"]
+    dest = args.upper()
+    valid_origin = "has_station" in origin and origin["has_station"] == True
 
-    if "has_station" not in origin or origin["has_station"] == False:
-      print("ERROR: No Research Station here to shuttle from")
-      return 0
+    valid_dest = "has_station" in self.L.cities[dest] and self.L.cities[dest] == True
 
-    other_stations = []
-    for city in self.L.cities:
-      if "has_station" in self.L.cities[city] and self.L.cities[city]["has_station"] == True:
-        other_stations.append(city)
-    if origin_loc in other_stations:
-      other_stations.remove(origin_loc)
+    if valid_origin == True and valid_dest == True:
+      self.L.move_p(player, dest)
 
-    if len(other_stations) == 0:
-      print("No available shuttle locations")
-      return 0
-
-    if args != None and args.upper() in self.L.cities:
-      print("found args")
-      arg_destination = args.upper()
-    else:
-      arg_destination = None
-
-    if args == None or arg_destination not in other_stations:
-      print("The following are valid shuttle locations")
-      for city_name in other_stations:
-        print(city_name)
-      return 0
-    
-    if arg_destination in other_stations:
-      print("SHUTTLE FLIGHT booked to %s" % arg_destination)
-      print("Logging out at %s" % origin_loc)
-      print("...Logging in at %s" % arg_destination)
-      self.L.move_p(player, arg_destination)
-      return 1
 
   def construct_station(self, args, player):
     can_build_here = False

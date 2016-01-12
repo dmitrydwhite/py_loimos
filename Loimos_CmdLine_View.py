@@ -107,14 +107,14 @@ class Command_Line_View:
       "treat": self.view_treat, # Fully Extracted, 1/7/16
       "cure": self.ctrl.cure, # Fully Extracted, 1/7/16
       "ride": self.ctrl.ride_or_ferry, # Fully Extracted, 1/7/16
-      "book": self.view.view_book_a_flight, # Fully Extracted, 1/7/16
-      "shuttle": self.ctrl.shuttle,
+      "book": self.view_book_a_flight, # Fully Extracted, 1/7/16
+      "shuttle": self.view_shuttle, # Fully Extracted, 1/12/16
       "station": self.ctrl.construct_station, #Fully Extracted, 12/26/15
       "review": self.review, # Optional Method, Complete, 12/26/15
       "status": self.status, # Optional Method, Complete, 12/26/15
       "cx": self.show_connections, # Optional Method, Complete, 12/26/15
       "apply": self.ctrl.apply_grant,
-      "xm": self.ctrl.transmit,
+      "xm": self.ctrl.transmit, # Pass
       "dispatch": self.ctrl.dispatch_other_player,
       "reapply": self.ctrl.re_apply_grant,
       "skip": self.skip_turn # Optional Method, Complete, 12/26/15
@@ -154,66 +154,70 @@ class Command_Line_View:
       return None
 
   def view_treat(self, args, player):
+    game_diseases = self.L.diseases
+    disease_to_treat = None
+    treatment_loc = player["location"]
+    treatment_infections = {}
+
+    # If we have args, set it to match the UPPERCASE that our data is in
     if args != None:
       args = args.lower()
     
-    treatment_loc = player["location"]
-    
-    if "infections" in self.L.cities[treatment_loc] and str(args) in self.L.cities[treatment_loc]["infections"]:
+    # Check to see if there are any diseases present in this location, if so make that our infections obj
+    if "infections" in self.L.cities[treatment_loc]:
       treatment_infections = self.L.cities[treatment_loc]["infections"]
-    else:
-      treatment_infections = {}
-    
-    game_diseases = self.L.diseases
-    
-    disease_to_treat = None
 
-    if len(treatment_infections) == 0:
-      disease_to_treat = None
-    else:
+    # First let's set disease_to_treat to the first disease in this city
+    if len(treatment_infections) > 0:
       for disease in treatment_infections:
         if treatment_infections[disease] != 0:
           disease_to_treat = disease
           break
 
-    if disease_to_treat == None:
-      self.view.show_no_diseases_here()
-      return 0
-
-    if len(treatment_infections) > 1:
+    if len(treatment_infections) > 1:     
       multi_diseases = True
     else:
       multi_diseases = False
 
-    if args != None:
-      # Let's check the args submitted to see if they match any of the diseases in this city
-      args_match = False
-      for disease in treatment_infections:
-        # First check if they submitted a number
-        if args == str(disease):
-          args_match = True
-          disease_to_treat = disease
-          break
-        
-        # Then check if they typed the color exactly
-        if args == game_diseases[disease]["color"]:
-          args_match == True
-          break
+    if multi_diseases == True:
+    # In this block, there is more than one disease present in the city
+      if args != None:
+        # Let's check the args submitted to see if they match any of the diseases in this city
+        args_match = False
+        for disease in treatment_infections:
+          # First check if they submitted a number
+          if args == str(disease):
+            args_match = True
+            disease_to_treat = disease
+            break
+          
+          # Then check if they typed the color exactly
+          if args == game_diseases[disease]["color"]:
+            args_match == True
+            disease_to_treat = disease
+            break
 
-        # Then check if the first three letters of their string match the first three letters of the color
-        if args[0:3] == game_diseases[disease]["color"][0:3]:
-          args_match = True
-          disease_to_treat = disease
-          break
+          # Then check if the first three letters of their string match the first three letters of the color
+          if args[0:3] == game_diseases[disease]["color"][0:3]:
+            args_match = True
+            disease_to_treat = disease
+            break
 
-        # Then check if maybe they tried to type the name of the disease
-        if args[0:7].lower() == game_diseases[disease]["name"][0:7].lower():
-          args_match = True
-          disease_to_treat = disease
-          break
+          # Then check if maybe they tried to type the name of the disease
+          if args[0:7].lower() == game_diseases[disease]["name"][0:7].lower():
+            args_match = True
+            disease_to_treat = disease
+            break
 
-        print("treatment plan instructions not understood or invalid")
-        return 0    
+          print("treatment plan instructions not understood or invalid")
+          return 0
+
+    if disease_to_treat == None:
+      self.show_no_diseases_here()
+      return 0  
+    else:
+      self.ctrl.treat(disease_to_treat, player)
+      return 1
 
   def view_book_a_flight(self, args, player):
     if args == None:
@@ -259,11 +263,69 @@ class Command_Line_View:
       discard = locs[int(selection) - 1]
       print("%s selected as booking document for flight", discard)
 
-    self.ctrl.book_a_flight(player, locs[1], discard)
+    self.ctrl.book_a_flight(locs[1], player, discard)
     print("COMMERCIAL FLIGHT booked to %s" % locs[1])
     print("Logging out at %s" % locs[0])
     print("...Logging in at %s" % locs[1])
     return 1
+
+  def view_shuttle(self, args, player):
+    origin = self.L.cities[player["location"]]
+    origin_loc = origin["name"]
+
+    if "has_station" not in origin or origin["has_station"] == False:
+      print("ERROR: No Research Station here to shuttle from")
+      return 0
+
+    other_stations = []
+    for city in self.L.cities:
+      if "has_station" in self.L.cities[city] and self.L.cities[city]["has_station"] == True:
+        other_stations.append(city)
+    if origin_loc in other_stations:
+      other_stations.remove(origin_loc)
+
+    if len(other_stations) == 0:
+      if player["fly_from_station"] == True:
+        self.ops_shuttle(args, player)
+      else:
+        print("No available shuttle locations")
+        return 0
+
+    if args != None and args.upper() in self.L.cities:
+      arg_destination = args.upper()
+    else:
+      arg_destination = None
+
+    if args == None or arg_destination not in other_stations:
+      if player["fly_from_station"] == True:
+        self.ops_shuttle(args, player)
+      else:
+        print("The following are valid shuttle locations")
+        for city_name in other_stations:
+          print(city_name)
+        return 0
+    
+    if arg_destination in other_stations:
+      self.ctrl.shuttle(arg_destination, player)
+      print("SHUTTLE FLIGHT booked to %s" % arg_destination)
+      print("Logging out at %s" % origin_loc)
+      print("...Logging in at %s" % arg_destination)
+      return 1
+
+  def ops_shuttle(self, args, player):
+    destination = args.upper()
+    print("select any booking document to fly from this research station to %s" % destination)
+    self.review(self, player)
+    valid_input = False
+    while valid_input == False:
+      discard = int(input("select document > ")) - 1
+      if discard in range(len(player["research"])):
+        valid_input = True
+
+    print("SHUTTLE FLIGHT booked to %s" % destination)
+    print("Logging out at %s" % player["location"])
+    print("...Logging in at %s" % destination)
+    self.ctrl.book_a_flight(destination, player, player["research"][discard])
 
   def choose_research_to_give(self, this_turn_player, research_player):
     print("Select Research from the %s TEAM to transfer:" % research_player["group"])
