@@ -120,9 +120,11 @@ class Loimos_Controller:
           return 1
         else:
           self.view.no_cards_to_trade(here)
+          return 0
 
     else:
       self.view.offer_eligible_players_to_collaborate(other_players_here)
+      return 0
       
 
   """
@@ -204,10 +206,11 @@ class Loimos_Controller:
     dest = args.upper()
     valid_origin = "has_station" in origin and origin["has_station"] == True
 
-    valid_dest = "has_station" in self.L.cities[dest] and self.L.cities[dest] == True
+    valid_dest = "has_station" in self.L.cities[dest] and self.L.cities[dest]["has_station"] == True
 
     if valid_origin == True and valid_dest == True:
       self.L.move_p(player, dest)
+      return 1
 
 
   def construct_station(self, args, player):
@@ -236,13 +239,19 @@ class Loimos_Controller:
 
 
   def apply_grant(self, args, player):
-    pass
+    if args.upper() in self.L.events:
+      return self.L.grants._apply(args.upper(), self.L)
+      return 0
+    else:
+      self.view.invalid_grant()
+      return 0
 
   def transmit(self, args, player):
     pass
 
   def dispatch_other_player(self, args, player):
-    pass
+    # essentially pass here
+    return 0
 
   def re_apply_grant(self, args, player):
     pass

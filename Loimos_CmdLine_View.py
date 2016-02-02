@@ -113,12 +113,13 @@ class Command_Line_View:
       "review": self.review, # Optional Method, Complete, 12/26/15
       "status": self.status, # Optional Method, Complete, 12/26/15
       "cx": self.show_connections, # Optional Method, Complete, 12/26/15
-      "apply": self.ctrl.apply_grant,
+      "apply": self.apply_grant,
       "xm": self.ctrl.transmit, # Pass
       "dispatch": self.ctrl.dispatch_other_player,
       "reapply": self.ctrl.re_apply_grant,
       "skip": self.skip_turn # Optional Method, Complete, 12/26/15
     }
+    # self.status(None, None)
     while input_status == 0:
       raw_text = input(player["group"] + "@" + player["location"] + "}>")
 
@@ -314,9 +315,9 @@ class Command_Line_View:
 
   def ops_shuttle(self, args, player):
     destination = args.upper()
+    valid_input = False
     print("select any booking document to fly from this research station to %s" % destination)
     self.review(self, player)
-    valid_input = False
     while valid_input == False:
       discard = int(input("select document > ")) - 1
       if discard in range(len(player["research"])):
@@ -326,6 +327,85 @@ class Command_Line_View:
     print("Logging out at %s" % player["location"])
     print("...Logging in at %s" % destination)
     self.ctrl.book_a_flight(destination, player, player["research"][discard])
+    return 1
+
+  def request_airlift_info(self):
+    team_valid = False
+    dest_valid = False
+    while team_valid == False:
+      team_to_lift = input("which team should be airlifted?> ").upper()
+      if team_to_lift in self.L.players:
+        team_valid = True
+
+    while dest_valid == False:
+      lift_destination = input("where should they be airlifted?> ").upper()
+      if lift_destination in self.L.cities:
+        dest_valid = True
+
+    return (team_to_lift, lift_destination)
+
+  def apply_grant(self, args, player):
+    if args == None:
+      print('specify grant to apply')
+      return 0
+    elif args.upper() in player["research"]:
+      self.ctrl.apply_grant(args, player)
+      player["research"].remove(args.upper())
+      return 1
+    else:
+      print('that grant is not available to you at this time')
+      return 0
+
+  def view_forecast(self, next_infections):
+    new_list = [''] * len(next_infections)
+    reorder_valid = False
+    mock = {}
+    mock["research"] = next_infections
+    print("MSG::CDC==>@ALL.TEAMS[Data pattern analysis has determined the following %d cities will experience infections]" % len(next_infections))
+    for idx, card in enumerate(next_infections):
+      counter = idx + 1
+      print("%d. %s will be infected with %s" % (counter, card, self.L.diseases[self.L.cities[card]["group"]]["name"]))
+    print("MSG::CDC==>@ALL.TEAMS[Reorder this list to best suit your response strategy]")
+    print("MSG::CDC==>@ALL.TEAMS[EXAMPLE: Enter 6,5,4,3,2,1 to reverse the list]")
+    while reorder_valid == False:
+      new_order = input("reorder> ").split(",")
+      for idx, new_index in enumerate(new_order):
+        new_list[idx] = next_infections[int(new_index) - 1]
+      reorder_valid = True
+
+    print(new_list) # debugger
+    return new_list
+
+
+  def view_government_grant(self):
+    input_valid = False
+
+    while input_valid == False:
+      new_station = input("determine location for government funded research station> ").upper()
+      if new_station in self.L.cities:
+        if "has_station" not in self.L.cities[new_station] or self.L.cities[new_station]["has_station"] != True:
+          input_valid = True
+        else:
+          print("research station already constructed in %s" % new_station)
+      else:
+        print("input not understood")
+
+    return new_station
+
+  def view_resilient_pop(self, infected_cities):
+    input_valid = False
+    print("MSG::CDC==>@ALL.TEAMS[Vaccine has been developed based on available research]")
+    print("MSG::CDC==>@ALL.TEAMS[Select a city below to receive vaccine protecting from all future infections]")
+    for idx, card in enumerate(infected_cities):
+      counter = idx + 1
+      print("%d. %s" %(counter, card))
+    while input_valid == False:
+      city_to_remove = input("select city to receive unversal vaccination> ")
+      if int(city_to_remove) in range(len(infected_cities)):
+        remove_idx = int(city_to_remove) - 1
+        input_valid = True
+
+    return infected_cities[remove_idx]
 
   def choose_research_to_give(self, this_turn_player, research_player):
     print("Select Research from the %s TEAM to transfer:" % research_player["group"])
@@ -364,6 +444,10 @@ class Command_Line_View:
 
   def invalid_ride(self):
     print("destination is not on a ferry or shuttle route from here")
+    return 0
+
+  def invalid_grant(self):
+    print("not a valid grant submission")
     return 0
 
   def show_construction_start(self, boolean, location):
