@@ -201,7 +201,6 @@ class Loimos_Controller:
       return 1
 
   def shuttle(self, args, player):
-    print(args) # debugger
     origin = self.L.cities[player["location"]]
     dest = args.upper()
     valid_origin = "has_station" in origin and origin["has_station"] == True
@@ -241,7 +240,6 @@ class Loimos_Controller:
   def apply_grant(self, args, player):
     if args.upper() in self.L.events:
       return self.L.grants._apply(args.upper(), self.L)
-      return 0
     else:
       self.view.invalid_grant()
       return 0
@@ -249,9 +247,11 @@ class Loimos_Controller:
   def transmit(self, args, player):
     pass
 
-  def dispatch_other_player(self, args, player):
-    # essentially pass here
-    return 0
+  def dispatch_other_player(self, args, player, moving_player, discard=None):
+    self.L.move_p(player, args)
+    if moving_player != True:
+      self.L.discard(moving_player, discard)
+    return 1
 
   def re_apply_grant(self, args, player):
     pass

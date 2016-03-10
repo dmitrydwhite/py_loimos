@@ -27,7 +27,6 @@ class Card_Events:
   begin with an underscore(_).  The method should accept a 'game' argument, and should return identifying
   information about the event if 'game' is None.
   """
-  # No View Methods Required
   def one_quiet_night(self, game): 
     name = 'ONE QUIET NIGHT'
     if game == None:
@@ -35,7 +34,6 @@ class Card_Events:
     else:
       game.one_quiet_night = True
 
-  # View Method Complete
   def airlift(self, game):
     name = 'AIRLIFT'
     if game == None:
@@ -45,7 +43,6 @@ class Card_Events:
       print(airlift_info);
       game.move_p(game.players[airlift_info[0]], airlift_info[1])
 
-  # View Method Complete
   def forecast(self, game):
     name = 'FORECAST'
     if game == None:
@@ -54,7 +51,6 @@ class Card_Events:
       replace = self._view.view_forecast(game.infection_dex[0:6] if len(game.infection_dex) >= 6 else game.infection_dex)
       game.infection_dex[0:len(replace)] = replace
 
-  # View Method Complete
   def government_grant(self, game):
     name = 'GOVERNMENT GRANT'
     if game == None:
@@ -63,7 +59,6 @@ class Card_Events:
       new_station = self._view.view_government_grant()
       game.build_station(new_station)
 
-  # View Method Complete
   def resilient_pop(self, game):
     name = 'RESILIENT POPULATION'
     if game == None:

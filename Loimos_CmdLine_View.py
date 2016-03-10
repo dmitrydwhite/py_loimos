@@ -115,7 +115,7 @@ class Command_Line_View:
       "cx": self.show_connections, # Optional Method, Complete, 12/26/15
       "apply": self.apply_grant,
       "xm": self.ctrl.transmit, # Pass
-      "dispatch": self.ctrl.dispatch_other_player,
+      "dispatch": self.view_dispatch_other_player,
       "reapply": self.ctrl.re_apply_grant,
       "skip": self.skip_turn # Optional Method, Complete, 12/26/15
     }
@@ -248,20 +248,7 @@ class Command_Line_View:
       discard = locs[0]
 
     if has_origin and has_destination:
-      correct_selection = 1
-      print("You have booking documents for both %s and %s.  Which document would you like to use?" % locs)
-      print("1. %s" % locs[0])
-      print("2. %s" % locs[1])
-      print("3. cancel")
-      while correct_selection == 1:
-        selection = input("Select 1 or 2}>")
-        print(selection)
-        if selection == "3":
-          return 0
-        if selection == "1" or selection == "2":
-          correct_selection = 0
-
-      discard = locs[int(selection) - 1]
+      discard = self.choose_booking_doc()
       print("%s selected as booking document for flight", discard)
 
     self.ctrl.book_a_flight(locs[1], player, discard)
@@ -269,6 +256,23 @@ class Command_Line_View:
     print("Logging out at %s" % locs[0])
     print("...Logging in at %s" % locs[1])
     return 1
+
+  def choose_booking_doc(self, opt_a, opt_b):
+    correct_selection = 1
+    locs = (opt_a, opt_b)
+    print("You have booking documents for both %s and %s.  Which document would you like to use?" % locs)
+    print("1. %s" % locs[0])
+    print("2. %s" % locs[1])
+    print("3. cancel")
+    while correct_selection == 1:
+      selection = input("Select 1 or 2}>")
+      print(selection)
+      if selection == "3":
+        return 0
+      if selection == "1" or selection == "2":
+        correct_selection = 0
+
+    return locs[int(selection) - 1]
 
   def view_shuttle(self, args, player):
     origin = self.L.cities[player["location"]]
@@ -474,6 +478,79 @@ class Command_Line_View:
 
   def show_no_diseases_here(self):
     print("no diseases suitable for treatment at this location")
+
+  def view_dispatch_other_player(self, args, player):
+    if player["send_others"] != True:
+      print("Only the DISPATCH team can dispatch other teams")
+      return 0
+
+    if args == None:
+      self.prompt_dispatch
+    else:
+      arg_array = args.split(" ")
+      if len(arg_array) < 2:
+        print("USAGE:")
+        print("dispatch")
+        print("dispatch <team> <destination>")
+        return 0
+
+      team = arg_array.pop(0).upper()
+      if len(arg_array) > 1:
+        destination = " ".join(arg_array).upper()
+      else:
+        destination = arg_array[0].upper()
+
+      if team in self.L.players and destination in self.L.cities:
+        good_dispatch = True
+        # if player["group"] == team:
+        #   good_dispatch = False
+        if self.L.players[team]["location"] == destination:
+          good_dispatch = False
+        if good_dispatch == False:
+          return 0
+
+        return self.view_make_dispatch(team, destination, player)
+
+  def prompt_dispatch(self):
+    return 0
+
+  def view_make_dispatch(self, team_to_move, destination, dispatcher):
+    good_dispatch = False
+    current_city = self.L.players[team_to_move]["location"]
+    dest_adjacent = destination in self.L.cities[current_city]["connections"]
+    dispatcher_has_ticket = destination in dispatcher["research"] or current_city in dispatcher["research"]
+    team_can_shuttle = self.L.cities[current_city]["get_station"]() and self.L.cities[destination]["get_station"]()
+    another_team = False
+    for player in self.L.players:
+      if self.L.players[player]["location"] == destination:
+        another_team = True
+
+    if dest_adjacent:
+      print("Moving %s from %s to %s" % (team_to_move, current_city, destination))
+      return self.ctrl.ride_or_ferry(destination, self.L.players[team_to_move])
+
+    elif another_team:
+      print("Uniting %s team with collaborators in %s" % (team_to_move, destination))
+      return self.ctrl.dispatch_other_player(destination, self.L.players[team_to_move], True)
+
+    elif team_can_shuttle:
+      print("Shuttle %s team from %s to %s" % (team_to_move, current_city, destination))
+      return self.ctrl.shuttle(destination, self.L.players[team_to_move])
+
+    elif dispatcher_has_ticket:
+      if destination in dispatcher["research"]:
+        discard = destination
+      if current_city in dispatcher["research"]:
+        discard = current_city
+      if destination in dispatcher["research"] and current_city in dispatcher["research"]:
+        discard = self.choose_booking_doc(current_city, destination)
+      print("Flying %s from %s to %s" % (team_to_move, current_city, destination))
+      return self.ctrl.dispatch_other_player(destination, self.L.players[team_to_move], dispatcher, discard)
+
+    else:
+      print("Cannot complete this dispatch operation")
+      return 0
+
 
   ### Optional Methods ###
   def skip_turn(self, args, player):
