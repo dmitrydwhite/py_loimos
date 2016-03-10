@@ -113,9 +113,9 @@ class Command_Line_View:
       "review": self.review, # Optional Method, Complete, 12/26/15
       "status": self.status, # Optional Method, Complete, 12/26/15
       "cx": self.show_connections, # Optional Method, Complete, 12/26/15
-      "apply": self.apply_grant,
+      "apply": self.apply_grant, # Method Complete, 3/10/16
       "xm": self.ctrl.transmit, # Pass
-      "dispatch": self.view_dispatch_other_player,
+      "dispatch": self.view_dispatch_other_player, # Method Complete, 3/10/16
       "reapply": self.ctrl.re_apply_grant,
       "skip": self.skip_turn # Optional Method, Complete, 12/26/15
     }
@@ -485,7 +485,7 @@ class Command_Line_View:
       return 0
 
     if args == None:
-      self.prompt_dispatch
+      return self.prompt_dispatch(player)
     else:
       arg_array = args.split(" ")
       if len(arg_array) < 2:
@@ -501,18 +501,31 @@ class Command_Line_View:
         destination = arg_array[0].upper()
 
       if team in self.L.players and destination in self.L.cities:
-        good_dispatch = True
-        # if player["group"] == team:
-        #   good_dispatch = False
         if self.L.players[team]["location"] == destination:
-          good_dispatch = False
-        if good_dispatch == False:
+          print("cannot dispatch team to its current location")
           return 0
 
         return self.view_make_dispatch(team, destination, player)
 
-  def prompt_dispatch(self):
-    return 0
+  def prompt_dispatch(self, player):
+    team_input = 0
+    destination_input = 0
+
+    while team_input == 0:
+      team_to_move = input("DISPATCH which team ?>").upper()
+      if team_to_move in self.L.players:
+        team_input = 1
+      else:
+        print("DISPATCH ERROR: Invalid team")
+
+    while destination_input == 0:
+      destination = input("DISPATCH %s to which city ?>" % team_to_move).upper()
+      if destination in self.L.cities:
+        destination_input = 1
+      else:
+        print("DISPATCH ERROR: Invalid destination")
+
+    return self.view_make_dispatch(team_to_move, destination, player)
 
   def view_make_dispatch(self, team_to_move, destination, dispatcher):
     good_dispatch = False

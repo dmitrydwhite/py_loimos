@@ -4,7 +4,6 @@ from Loimos_CmdLine_View import Command_Line_View as cl_view
 This is the Controller
 """
 class Loimos_Controller:
-# TODO: Separate Controller functionality from View functionality better
 
   def __init__(self, gameObj, values=None):
     if values is None:
