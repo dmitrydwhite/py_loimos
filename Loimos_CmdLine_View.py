@@ -273,6 +273,7 @@ class Command_Line_View:
   def view_shuttle(self, args, player):
     origin = self.L.cities[player["location"]]
     origin_loc = origin["name"]
+    this_player_is_ops = False
 
     if "has_station" not in origin or origin["has_station"] == False:
       print("ERROR: No Research Station here to shuttle from")
@@ -287,7 +288,7 @@ class Command_Line_View:
 
     if len(other_stations) == 0:
       if player["fly_from_station"] == True:
-        self.ops_shuttle(args, player)
+        this_player_is_ops = True
       else:
         print("No available shuttle locations")
         return 0
@@ -299,13 +300,16 @@ class Command_Line_View:
 
     if args == None or arg_destination not in other_stations:
       if player["fly_from_station"] == True:
-        self.ops_shuttle(args, player)
+        this_player_is_ops = True
       else:
         print("The following are valid shuttle locations")
         for city_name in other_stations:
           print(city_name)
         return 0
     
+    if this_player_is_ops:
+      return self.ops_shuttle(args, player)
+
     if arg_destination in other_stations:
       self.ctrl.shuttle(arg_destination, player)
       print("SHUTTLE FLIGHT booked to %s" % arg_destination)
@@ -326,8 +330,7 @@ class Command_Line_View:
     print("SHUTTLE FLIGHT booked to %s" % destination)
     print("Logging out at %s" % player["location"])
     print("...Logging in at %s" % destination)
-    self.ctrl.book_a_flight(destination, player, player["research"][discard])
-    return 1
+    return self.ctrl.book_a_flight(destination, player, player["research"][discard])
 
   def request_airlift_info(self):
     team_valid = False
