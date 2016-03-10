@@ -173,9 +173,18 @@ class GameSpace:
       dat = json.load(board)
 
     for civitas in dat["cities"]:
-      cits[civitas["name"]] = civitas
+      cits[civitas["name"]] = self.create_city_obj(civitas)
 
     return cits
+
+  def create_city_obj(self, config):
+    base_obj = {
+      "get_station": lambda: "has_station" in base_obj and base_obj["has_station"] == True
+    }
+
+    base_obj.update(config)
+
+    return base_obj
 
   """
   This method creates the initial infection state for the starting cities
